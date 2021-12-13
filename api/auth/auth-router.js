@@ -1,5 +1,12 @@
-// Require `checkUsernameFree`, `checkUsernameExists` and `checkPasswordLength`
-// middleware functions from `auth-middleware.js`. You will need them here!
+const router = require("express").Router()
+
+const {
+  checkUsernameFree,
+  checkUsernameExists,
+  checkPasswordLength
+} = require('../auth/auth-middleware')
+
+const Users = require('../users/users-model')
 
 
 /**
@@ -61,3 +68,4 @@
 
  
 // Don't forget to add the router to the `exports` object so it can be required in other modules
+module.exports = router
