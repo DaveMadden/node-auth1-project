@@ -8,8 +8,6 @@ const Store = require('connect-session-knex')(session)
 const authRouter = require('./auth/auth-router')
 const usersRouter = require('./users/users-router')
 
-
-
 /**
   Do what needs to be done to support sessions with the `express-session` package!
   To respect users' privacy, do NOT send them a cookie unless they log in.
