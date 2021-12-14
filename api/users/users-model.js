@@ -12,7 +12,6 @@ function find() {
  */
 function findBy(filter) { //filter is an object
   return db('users')
-    .select('user_id', 'username')
     .where(filter)
 }
 

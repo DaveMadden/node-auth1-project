@@ -1,11 +1,4 @@
-/*
-  If the user does not have a session saved in the server
-
-  status 401
-  {
-    "message": "You shall not pass!"
-  }
-*/
+const User = require('../users/users-model')
 
 function restricted(req, res, next) {
   if (req.session.user) {
@@ -16,48 +9,62 @@ function restricted(req, res, next) {
 }
 
 
-/*
-  If the username in req.body already exists in the database
-
-  status 422
-  {
-    "message": "Username taken"
-  }
-*/
-function checkUsernameFree(req, res, next) {
+async function checkUsernameFree(req, res, next) {
   console.log("MIDDLEWARE: check username free")
-  next()
+  const { username } = req.body
+  console.log("checking:", username)
+  console.log("reconstruct:", { username })
+  try {
+    const usernameThere = await User.findBy({ username })
+
+    console.log("usernameThere:", usernameThere)
+
+    if(usernameThere.length !== 0){
+      return next({ status: 422, message: "Username taken"})
+    }
+    else{
+      next()
+    }
+
+
+  } catch (error) {
+    next(error)
+  }
 }
 
-/*
-  If the username in req.body does NOT exist in the database
-
-  status 401
-  {
-    "message": "Invalid credentials"
-  }
-*/
-function checkUsernameExists(req, res, next) {
+async function checkUsernameExists(req, res, next) {
   console.log("MIDDLEWARE: check username exists")
-  next()
+
+  const {username} = req.body
+
+  try {
+    const [userFromDb] = await User.findBy({username})
+    console.log(userFromDb)
+    if (!userFromDb) {
+      return next({ message: 'Invalid credentials', status: 401 })
+    }
+    else{
+      req.loggedUser = userFromDb
+      next()
+    }
+
+  } catch (error) {
+    console.error(error)
+    next(error)
+  }
 
 }
 
-/*
-  If password is missing from req.body, or if it's 3 chars or shorter
-
-  status 422
-  {
-    "message": "Password must be longer than 3 chars"
-  }
-*/
 function checkPasswordLength(req, res, next) {
   console.log("MIDDLEWARE: check pwd length")
-  next()
-
+  const pwd = req.body.password
+  if (pwd.length > 3){
+    next()
+  }
+  else{
+    return next({status: 422, message: "Password must be longer than 3 chars"})
+  }
 }
-
-// Don't forget to add these to the `exports` object so they can be required in other modules
 
 module.exports = {
   restricted,

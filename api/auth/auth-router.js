@@ -9,66 +9,66 @@ const {
   checkPasswordLength
 } = require('../auth/auth-middleware')
 
-const Users = require('../users/users-model')
+const User = require('../users/users-model')
 
 
-/**
-  1 [POST] /api/auth/register { "username": "sue", "password": "1234" }
 
-  response:
-  status 200
-  {
-    "user_id": 2,
-    "username": "sue"
+router.post('/register', checkUsernameFree, checkPasswordLength, async (req,res,next)=>{
+  try {
+    //pull username and pass from req.body
+    const { username, password } = req.body
+    //create a hash for pwd
+    const newUser = {
+      username,
+      password: bcrypt.hashSync(password, 8)
+    }
+    //store user and hash to db
+    const [createdUser] = await User.add(newUser)
+    console.log("createdUser:", createdUser)
+    res.status(200).json(createdUser)
   }
-
-  response on username taken:
-  status 422
-  {
-    "message": "Username taken"
+  catch (error) {
+    next(error)
   }
+})
 
-  response on password three chars or less:
-  status 422
-  {
-    "message": "Password must be longer than 3 chars"
+router.post('/login', checkUsernameExists, async (req,res,next)=>{
+  try {
+    const { username, password } = req.body
+    const verifiesHash = bcrypt.compareSync(password, req.loggedUser.password)
+    
+    if(!verifiesHash){
+      return next({ status: 401, message: "Invalid credentials"})
+    }
+
+    req.session.user = req.loggedUser
+    res.json({ message: `Welcome ${username}!`})
+
+  } catch (error) {
+    next(error)
   }
- */
+})
 
-
-/**
-  2 [POST] /api/auth/login { "username": "sue", "password": "1234" }
-
-  response:
-  status 200
-  {
-    "message": "Welcome sue!"
+router.get('/logout', async (req,res,next)=>{
+  try {
+    if (req.session.user){
+      req.session.destroy((err)=>{
+        if (err){
+          res.json('cannot leave')
+        }
+        else{
+          res.status(200).json({message: 'logged out'})
+        }
+      })
+    }
+    else {
+      res.status(200).json({message: 'no session'})
+    }
   }
-
-  response on invalid credentials:
-  status 401
-  {
-    "message": "Invalid credentials"
+  catch (error) {
+    next(error)
   }
- */
-
-
-/**
-  3 [GET] /api/auth/logout
-
-  response for logged-in users:
-  status 200
-  {
-    "message": "logged out"
-  }
-
-  response for not-logged-in users:
-  status 200
-  {
-    "message": "no session"
-  }
- */
-
+})
  
 // Don't forget to add the router to the `exports` object so it can be required in other modules
 module.exports = router
